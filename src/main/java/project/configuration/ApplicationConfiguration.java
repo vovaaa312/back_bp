@@ -2,6 +2,7 @@ package project.configuration;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -11,25 +12,27 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import project.repository.UserRepository;
+import project.service.repository.AuthUserRepository;
 
 @Configuration
 @RequiredArgsConstructor
+@ComponentScan
 public class ApplicationConfiguration {
-    private final UserRepository repository;
+    private final AuthUserRepository repository;
+
 
     @Bean
-    public UserDetailsService userDetailsService(){
-        return (UserDetailsService) username -> repository.findAuthUsersByEmail(username)
-                .orElseThrow(()-> new UsernameNotFoundException("User not found."));
+    public UserDetailsService userDetailsService() {
+        return (UserDetailsService) username
+                -> repository.findAuthUserByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found."));
     }
 
     @Bean
-    public AuthenticationProvider  authenticationProvider(){
+    public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService());
         provider.setPasswordEncoder(passwordEncoder());
-        return  provider;
+        return provider;
     }
 
     @Bean
@@ -37,8 +40,11 @@ public class ApplicationConfiguration {
         return new BCryptPasswordEncoder();
 
     }
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+
+
 }

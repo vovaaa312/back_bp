@@ -5,49 +5,49 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import project.model.AuthUser;
-import project.model.Role;
-import project.model.request.AuthRequest;
-import project.model.request.RegisterRequest;
+import project.model.user.AuthUser;
+import project.model.user.SystemRole;
+import project.model.request.authentication.AuthRequest;
+import project.model.request.authentication.RegisterRequest;
 import project.model.response.AuthResponse;
-import project.repository.UserRepository;
+import project.service.repository.AuthUserRepository;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    private final UserRepository userRepository;
+    private final AuthUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    public AuthResponse reqister(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request) {
         var user = AuthUser.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.USER)
+                .role(SystemRole.SYSTEM_USER)
                 .build();
 
         userRepository.save(user);
         var jwtToken = jwtService.generateToken(user);
 
         return AuthResponse.builder()
-                .response(jwtToken)
+                .jwtResponse(jwtToken)
                 .build();
     }
 
     public AuthResponse authenticate(AuthRequest request) {
          authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                      request.getEmail(),
+                      request.getUsername(),
                       request.getPassword()
               )
          );
-         var user = userRepository.findAuthUsersByEmail(request.getEmail())
+         var user = userRepository.findAuthUserByUsername(request.getUsername())
                  .orElseThrow();
 
          var jwtToken = jwtService.generateToken(user);
 
         return AuthResponse.builder()
-                .response(jwtToken)
+                .jwtResponse(jwtToken)
                 .build();
     }
 }

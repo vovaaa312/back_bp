@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterRequest {
-    private String username;
-    private String email;
-    private String password;
+public class DeleteUserFromDatasetRequest {
+    String datasetId;
+    String userId;
 }

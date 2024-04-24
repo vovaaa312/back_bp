@@ -1,34 +1,40 @@
 package project.configuration;
 
-import jakarta.servlet.Filter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-@Configuration
-@EnableWebSecurity
-@RequiredArgsConstructor
+import static org.springframework.http.HttpMethod.*;
+import static project.model.user.SystemPermission.*;
+import static project.model.user.SystemRole.SYSTEM_ADMIN;
 
-public class SecurityConfiguration {
+@Configuration
+@EnableMongoRepositories
+@EnableWebSecurity
+@EnableMethodSecurity
+@RequiredArgsConstructor
+public class SecurityConfiguration  {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
 
+
+
+    private static final String[] WHITE_LIST_URL = {
+            "/api/auth/**",};
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 //        http
@@ -45,8 +51,22 @@ public class SecurityConfiguration {
                 .csrf()
                 .disable()
                 .authorizeRequests()
-                .requestMatchers("/api/**")
+                .requestMatchers(WHITE_LIST_URL)
                 .permitAll()
+
+                .requestMatchers(GET,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
+                .requestMatchers(POST,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
+                .requestMatchers(PUT,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
+                .requestMatchers(DELETE,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
+
+                .requestMatchers(GET,"/api/datasets***").hasAnyRole(SYSTEM_ADMIN.name())
+
+
+//                .requestMatchers("/api/test/***").hasAnyRole(SYSTEM_ADMIN.name(), SYSTEM_RESEARCHER.name())
+
+                //.requestMatchers("/api/images/**").hasRole(ADMIN_READ.name())
+//                .requestMatchers(PUT,"/api/test/***").hasAnyAuthority(ADMIN_UPDATE.name(), RESEARCHER_UPDATE.name())
+//                .requestMatchers(DELETE,"/api/test/***").hasAnyAuthority(ADMIN_DELETE.name(), RESEARCHER_DELETE.name())
 
                 .and()
                 .sessionManagement()
@@ -56,6 +76,7 @@ public class SecurityConfiguration {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
+
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

@@ -1,4 +1,4 @@
-package project.model.request;
+package project.model.request.user_request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthRequest {
-
-     String email;
-    String password;
+public class UpdateEmailRequest {
+    private String userId;
+    private String newEmail;
 }

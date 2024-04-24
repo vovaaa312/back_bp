@@ -1,4 +1,4 @@
-package project.model.response;
+package project.model.request.authentication;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthResponse {
-     String jwtResponse;
+public class AuthRequest {
 
+    String username;
+    String password;
 }
