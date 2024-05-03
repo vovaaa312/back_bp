@@ -54,12 +54,12 @@ public class SecurityConfiguration  {
                 .requestMatchers(WHITE_LIST_URL)
                 .permitAll()
 
-                .requestMatchers(GET,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
-                .requestMatchers(POST,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
-                .requestMatchers(PUT,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
-                .requestMatchers(DELETE,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
-
-                .requestMatchers(GET,"/api/datasets***").hasAnyRole(SYSTEM_ADMIN.name())
+//                .requestMatchers(GET,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
+//                .requestMatchers(POST,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
+//                .requestMatchers(PUT,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
+//                .requestMatchers(DELETE,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
+//
+//                .requestMatchers(GET,"/api/datasets***").hasAnyRole(SYSTEM_ADMIN.name())
 
 
 //                .requestMatchers("/api/test/***").hasAnyRole(SYSTEM_ADMIN.name(), SYSTEM_RESEARCHER.name())

@@ -6,12 +6,11 @@ import project.model.dataset.Dataset;
 import project.model.dataset.UserDataset;
 import project.model.dataset.UserDatasetDetails;
 import project.model.exception.DatasetNotFoundException;
-import project.model.exception.ProjectNotFoundException;
 import project.model.exception.UserNotFoundException;
 import project.model.user.AuthUser;
 import project.model.user.SystemRole;
 import project.service.repository.DatasetRepository;
-import project.service.repository.ProjectRepository;
+import project.service.repository.ImageRepository;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,10 +19,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DatasetService {
 
-    private final AuthUserService userService;
-    private final ProjectRepository projectRepository;
     private final DatasetRepository datasetRepository;
+    private final AuthUserService userService;
     private final UserDatasetService userDatasetService;
+    private final ProjectService projectService;
+    private final ImageService imageRepository;
 
     public List<Dataset> findAll() {
         return datasetRepository.findAll();
@@ -38,8 +38,15 @@ public class DatasetService {
     }
 
     public List<Dataset> findAllByProjectId(String projectId) {
-        projectRepository.findById(projectId).orElseThrow(() -> new ProjectNotFoundException("Project not found."));
+        projectService.findById(projectId);
         return datasetRepository.findDatasetsByProjectId(projectId).orElse(Collections.emptyList());
+    }
+
+    public List<Dataset> findAllByCategory(String category) {
+        return datasetRepository.findAllByCategory(category).orElse(Collections.emptyList());
+    }
+    public List<Dataset> findAllByCategoryAndProjectId(String category, String projectId) {
+        return datasetRepository.findAllByCategoryAndProjectId(category,projectId).orElse(Collections.emptyList());
     }
 
     public Dataset findById(String id) {
@@ -47,7 +54,7 @@ public class DatasetService {
     }
 
     public Dataset saveDataset(Dataset dataset) {
-        projectRepository.findById(dataset.getProjectId()).orElseThrow(() -> new ProjectNotFoundException("Project not found."));
+        projectService.findById(dataset.getProjectId());
         userService.findAuthUserById(dataset.getOwnerId()).orElseThrow(() -> new UserNotFoundException("User not found."));
 
         dataset.setCreationTimestamp(new Date());
@@ -67,7 +74,7 @@ public class DatasetService {
     }
 
     public Dataset updateDataset(Dataset dataset) {
-        projectRepository.findById(dataset.getProjectId()).orElseThrow(() -> new ProjectNotFoundException("Project not found."));
+        projectService.findById(dataset.getProjectId());
         datasetRepository.findById(dataset.getId()).orElseThrow(() -> new DatasetNotFoundException("Dataset not found."));
         userService.findAuthUserById(dataset.getOwnerId()).orElseThrow(() -> new UserNotFoundException("User not found."));
 
@@ -81,6 +88,9 @@ public class DatasetService {
 
     public Dataset deleteDataset(String id) {
         Dataset dataset = datasetRepository.findById(id).orElseThrow(() -> new DatasetNotFoundException("Dataset not found."));
+        if (!imageRepository.findAllImagesByDatasetId(id).isEmpty()) {
+            throw new UnsupportedOperationException("Images list of this project is not empty.");
+        }
         userDatasetService.deleteAllByDatasetId(id);
         datasetRepository.deleteById(id);
 
@@ -88,12 +98,20 @@ public class DatasetService {
     }
 
     public List<Dataset> deleteAllByProjectId(String projectId) {
-        projectRepository.findById(projectId).orElseThrow(() -> new ProjectNotFoundException("Project not found."));
-        List<Dataset> datasets = datasetRepository.findDatasetsByProjectId(projectId).orElse(Collections.emptyList());
-        datasets.forEach(dataset -> userDatasetService.deleteAllByDatasetId(dataset.getId()));
-        datasetRepository.deleteAllByProjectId(projectId);
 
-        return datasets;
+        //List<Dataset> deletedDatasets = new ArrayList<>();
+        List<Dataset> datasets = datasetRepository.findDatasetsByProjectId(projectId).orElse(Collections.emptyList());
+
+        datasets.forEach(dataset -> {
+            if (imageRepository.findAllImagesByDatasetId(dataset.getId()).isEmpty()) {
+                //deletedDatasets.add(dataset);
+                //datasetRepository.deleteById(dataset.getId());
+                userDatasetService.deleteAllByDatasetId(dataset.getId());
+                imageRepository.deleteAllImagesByDatasetId(dataset.getId());
+            }
+        });
+
+        return datasetRepository.deleteAllByProjectId(projectId).orElse(Collections.emptyList());
     }
 
     public List<AuthUser> findUsersByDatasetId(String datasetId) {
@@ -116,11 +134,10 @@ public class DatasetService {
     }
 
     public List<UserDatasetDetails> getUserDatasetDetailsByDatasetId(String datasetId) {
-        List<AuthUser> users = userDatasetService.findUsersByDatasetId(datasetId);
-        List<UserDataset> userDatasets = userDatasetService.findAllByDatasetId(datasetId);
 
-
-        return mapUserDetails(users,userDatasets);
+        return mapUserDetails(
+                userDatasetService.findUsersByDatasetId(datasetId),
+                userDatasetService.findAllByDatasetId(datasetId));
     }
 
     private List<UserDatasetDetails> mapUserDetails(

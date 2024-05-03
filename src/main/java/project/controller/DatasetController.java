@@ -131,12 +131,14 @@ public class DatasetController {
             @RequestBody Dataset request
     ) {
         // Retrieve and validate the authenticated user
-        AuthUser authorizedUser = userService.findAuthUserByUsername(authentication.getUsername()).orElseThrow();
+        AuthUser authorizedUser = userService
+                .findAuthUserByUsername(authentication.getUsername())
+                .orElseThrow();
         // Retrieve and validate the associated project
         String fetchedProject = projectService.findById(request.getProjectId()).getId();
         // Authorization check for non-admin users
         if (!projectService.userContainsAuthorityToEdit(fetchedProject, authorizedUser.getId()) &&
-                !authorizedUser.getRole().equals(SystemRole.SYSTEM_ADMIN))
+                !authorizedUser.isAdmin())
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
 
 
@@ -145,13 +147,6 @@ public class DatasetController {
         return ResponseEntity.ok(datasetService.saveDataset(request));
     }
 
-
-//    @PostMapping("/addDatasetToProject")
-//    @PreAuthorize("hasAnyAuthority('admin:create','researcher:create')")
-//    public ResponseEntity<?> addDatasetToProject(@RequestBody SaveDatasetRequest saveDatasetRequest){
-//
-//        return ResponseEntity.ok(datasetService.saveDataset(saveDatasetRequest.getDataset()));
-//    }
 
     @PutMapping("/updateDataset")
     @PreAuthorize("hasAuthority('admin:update')")
@@ -189,69 +184,6 @@ public class DatasetController {
         return ResponseEntity.ok(updatedDataset);
     }
 
-//    @PutMapping("/updateDataset/{id}")
-//    @PreAuthorize("hasAnyAuthority('admin:update', 'researcher:update')")
-//    public ResponseEntity<?> updateDataset(
-//            @AuthenticationPrincipal UserDetails authentication,
-//            @PathVariable String id,
-//            @RequestBody Dataset request
-//    ) {
-////        Optional<Dataset> datasetOpt = datasetService.findById(id);
-////        if (datasetOpt.isEmpty()) return ResponseEntity.badRequest().body(DATASET_NOT_FOUND_MESSAGE);
-//
-//        datasetService.findById(id);
-//
-//        String username = authentication.getUsername();
-//        Optional<AuthUser> userOpt = userService.findAuthUserByUsername(username);
-//        if (userOpt.isEmpty()) return ResponseEntity.badRequest().body(USER_NOT_FOUND_MESSAGE);
-//
-//        Optional<Project> projectOpt = projectService.findById(request.getProjectId());
-//        if (projectOpt.isEmpty()) return ResponseEntity.badRequest().body(PROJECT_NOT_FOUND_MESSAGE);
-////        if (projectOpt.isEmpty()) return ResponseEntity.badRequest().body("Project not found");
-//
-//
-//        AuthUser fetchedUser = userOpt.get();
-//        Project fetchedProject = projectOpt.get();
-//
-//        if (!datasetService.userContainsAuthorityToEdit(request.getId(), fetchedUser.getId()) &&
-//                !projectService.userContainsAuthorityToEdit(fetchedProject.getId(), fetchedUser.getId()) &&
-//                !fetchedUser.isAdmin()) {
-//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-//        }
-//
-//        if (!datasetService.userContainsAuthorityToEdit(request.getId(), fetchedUser.getId()) &&
-//                !fetchedUser.getRole().equals(SystemRole.SYSTEM_ADMIN))
-//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-//
-//
-//        request.setId(id);
-//        return ResponseEntity.ok(datasetService.updateDataset(request));
-//    }
-
-//    @DeleteMapping("/deleteDataset/{id}")
-//    @PreAuthorize("hasAnyAuthority('admin:delete', 'researcher:delete')")
-//    public ResponseEntity<?> deleteDataset(
-//            @AuthenticationPrincipal UserDetails authentication,
-//            @PathVariable String id
-//    ) {
-////        Optional<Dataset> datasetOpt = datasetService.findById(id);
-////        if (datasetOpt.isEmpty())
-////            return ResponseEntity.badRequest().body(DATASET_NOT_FOUND_MESSAGE);
-//
-//        Dataset dataset = datasetService.findById(id);
-//
-//        Optional<AuthUser> userOpt = userService.findAuthUserByUsername(authentication.getUsername());
-//        if (userOpt.isEmpty())
-//            return ResponseEntity.badRequest().body(USER_NOT_FOUND_MESSAGE);
-//        AuthUser fetchedUser = userOpt.get();
-//
-//        if (!datasetService.userContainsAuthorityToEdit(id, fetchedUser.getId()) &&
-//                !fetchedUser.getRole().equals(SystemRole.SYSTEM_ADMIN))
-//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-//
-//
-//        return ResponseEntity.ok(datasetService.deleteDataset(id));
-//    }
 
     @DeleteMapping("/deleteDataset/{id}")
     @PreAuthorize("hasAnyAuthority('admin:delete', 'researcher:delete')")
@@ -314,8 +246,6 @@ public class DatasetController {
         Project fetchedProject = projectService.findById(id);
         AuthUser fetchedUser = userService.findAuthUserByUsername(authentication.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_FOUND_MESSAGE));
-        ;
-
 
         if (!projectService.userContainsAuthorityToEdit(fetchedProject.getId(), fetchedUser.getId()) &&
                 !fetchedUser.getRole().equals(SystemRole.SYSTEM_ADMIN))
@@ -401,10 +331,6 @@ public class DatasetController {
         AuthUser authorized = userService.findAuthUserByUsername(authentication.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_FOUND_MESSAGE));
 
-
-//        if(!datasetService.isDatasetOwner(datasetId, authorized.getId()) &&
-//        )
-
         if (!authorized.isAdmin() &&
                 !projectService.userContainsAuthorityToEdit(project.getId(), authorized.getId()) &&
                 !datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId())
@@ -412,8 +338,6 @@ public class DatasetController {
 
 
         return ResponseEntity.ok(datasetService.getUserDatasetDetailsByDatasetId(datasetId));
-
-        //return ResponseEntity.ok(datasetService.findUsersByDatasetId(datasetId));
 
     }
 
@@ -427,7 +351,7 @@ public class DatasetController {
         AuthUser authorized = userService.findAuthUserByUsername(authentication.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_FOUND_MESSAGE));
         // Validate and retrieve the user by ID
-       AuthUser fetchedUser =  userService.findAuthUserById(request.getUserId())
+        AuthUser fetchedUser = userService.findAuthUserById(request.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found for given ID"));
 
         String projectId = datasetService.findById(request.getDatasetId()).getProjectId();
@@ -440,4 +364,6 @@ public class DatasetController {
 
         return ResponseEntity.ok(new UserDatasetDetails(fetchedUser, fetchedLink));
     }
+
+
 }

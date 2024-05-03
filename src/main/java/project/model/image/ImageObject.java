@@ -1,30 +1,26 @@
 package project.model.image;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.*;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document("Images")
+@Document("ImageObjects")
 @Entity
-public class Image {
-
+public class ImageObject {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private String id;
-
     private String name;
-    private String format;
-    private byte[] data;
-    private String datasetId;
-    @ElementCollection
-    private List<String> categories;
+    private String imageId;
+
 }

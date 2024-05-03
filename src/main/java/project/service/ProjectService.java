@@ -136,7 +136,7 @@ public class ProjectService {
 
         List<Dataset> datasets = datasetRepository.findDatasetsByProjectId(id).orElseThrow();
         if (!datasets.isEmpty())
-            throw new UnsupportedOperationException("Dataset list of this project is not empty.");
+            throw new UnsupportedOperationException("Datasets list of this project is not empty.");
 
         //datasets.forEach(dataset -> datasetRepository.delete(dataset)); // Optional: Force delete datasets if policy allows
 

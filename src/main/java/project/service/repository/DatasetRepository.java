@@ -15,4 +15,10 @@ public interface DatasetRepository extends MongoRepository<Dataset, String> {
     Optional<List<Dataset>> findDatasetsByProjectId(String projectId);
     Optional<List<Dataset>> deleteAllByProjectId(String projectId);
 
+    Optional<List<Dataset>> findAllByCategory(String category);
+
+    Optional<List<Dataset>> findAllByCategoryAndProjectId(String category, String projectId);
+
+
+
 }

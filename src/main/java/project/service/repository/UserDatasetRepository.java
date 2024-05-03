@@ -10,13 +10,13 @@ import java.util.Optional;
 
 @Repository
 public interface UserDatasetRepository extends MongoRepository<UserDataset, String> {
-    Optional <List<UserDataset>> findAllByUserId(String id);
-   Optional <List<UserDataset>> findAllByDatasetId(String id);
+    Optional<List<UserDataset>> findAllByUserId(String id);
+
+    Optional<List<UserDataset>> findAllByDatasetId(String id);
+
     Optional<UserDataset> findById(String id);
 
-  //  @Query("{'datasetId' : ?0, 'userId' : ?1}")
-  Optional<UserDataset> findFirstByDatasetIdAndUserId(String datasetId, String userId);
-
+    Optional<UserDataset> findFirstByDatasetIdAndUserId(String datasetId, String userId);
 
     Optional<List<UserDataset>> deleteUserDatasetsByDatasetId(String datasetId);
 
