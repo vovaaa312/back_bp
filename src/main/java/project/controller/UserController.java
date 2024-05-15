@@ -24,13 +24,25 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('admin:read')")
     @GetMapping("/getAll")
-    public ResponseEntity<Optional<List<AuthUser>>> getAllUsers() {
+    public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(userService.findAll());
     }
 
-
     @PreAuthorize("hasAuthority('admin:create')")
-    @PostMapping("/createUser")
+    @PutMapping("/update/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody AuthUser user){
+        if (userService.findAuthUserByUsername(user.getUsername()).isPresent()) {
+            String errorMessage = "User with username: {" + user.getUsername() + "} already exists";
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
+        }
+        if(userService.findAuthUserByEmail(user.getEmail()).isPresent()){
+            String errorMessage = "User with email: {" + user.getEmail() + "} already exists";
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
+        }
+        return ResponseEntity.ok(userService.updateAuthUser(id,user).orElseThrow());
+    }
+    @PreAuthorize("hasAuthority('admin:create')")
+    @PostMapping("/create")
     public ResponseEntity<?> createUser(@RequestBody AuthUser user){
         if (userService.findAuthUserByUsername(user.getUsername()).isPresent()) {
             String errorMessage = "User with username: {" + user.getUsername() + "} already exists";
@@ -39,9 +51,8 @@ public class UserController {
         if(userService.findAuthUserByEmail(user.getEmail()).isPresent()){
             String errorMessage = "User with email: {" + user.getEmail() + "} already exists";
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
-
         }
-        return ResponseEntity.ok(userService.addUser(user).get());
+        return ResponseEntity.ok(userService.addUser(user).orElseThrow());
     }
 
     @PreAuthorize("hasAuthority('admin:update')")

@@ -19,14 +19,11 @@ import project.service.repository.AuthUserRepository;
 @ComponentScan
 public class ApplicationConfiguration {
     private final AuthUserRepository repository;
-
-
     @Bean
     public UserDetailsService userDetailsService() {
         return (UserDetailsService) username
                 -> repository.findAuthUserByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found."));
     }
-
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -34,7 +31,6 @@ public class ApplicationConfiguration {
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

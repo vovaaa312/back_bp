@@ -8,6 +8,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import project.model.image.Image;
 import project.model.image.ImageObject;
 import project.model.image.ObjectPoint;
@@ -28,13 +29,13 @@ import java.util.List;
 public class ImageController {
 
     private static final String USER_NOT_FOUND_MESSAGE = "User not found.";
-    private static final String DATASET_NOT_FOUND_MESSAGE = "Dataset not found.";
     private static final String PERMISSION_DENIED_MESSAGE = "User doesn't have required authority to provide this operation.";
 
 
     private final ImageService imageService;
     private final DatasetService datasetService;
     private final AuthUserService userService;
+//    private final GridFsTemplate gridFsTemplate;
 
     @PreAuthorize("hasAuthority('admin:read')")
     @GetMapping("/getAll")
@@ -67,15 +68,13 @@ public class ImageController {
             @RequestParam("categories") List<String> categories
 
     ) {
-        AuthUser authorized = userService.findAuthUserByUsername(authentication.getUsername())
-                .orElseThrow();
-        if (!authorized.isAdmin() &&
-                !datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId()))
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
+        AuthUser authorized = getAuthorizedUser(authentication);
+        checkDatasetAuthorization(authorized, datasetId);
 
 
         return ResponseEntity.ok(imageService.findAllImagesByCategoriesContainingAllAndDatasetId(categories, datasetId));
     }
+
 
     @PostMapping("/save")
     @PreAuthorize("hasAnyAuthority('admin:create', 'researcher:create')")
@@ -87,18 +86,11 @@ public class ImageController {
             @RequestParam("categories") List<String> categories
     ) throws IOException {
 
-        AuthUser authorized = userService
-                .findAuthUserByUsername(authentication.getUsername())
-                .orElseThrow();
-
-        if (!datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId()) &&
-                !authorized.isAdmin()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-        }
-        // Convert MultipartFile to Image class and then save
+        AuthUser authorized = getAuthorizedUser(authentication);
+        checkDatasetAuthorization(authorized, datasetId);
 
         Image image = new Image(null, name, data.getContentType(), data.getBytes(), datasetId, categories);
-        return ResponseEntity.ok(imageService.saveImage(image));
+        return ResponseEntity.ok(imageService.saveImage(image, data));
     }
 
 
@@ -106,15 +98,11 @@ public class ImageController {
     @PreAuthorize("hasAnyAuthority('admin:read', 'researcher:read')")
     public ResponseEntity<?> getAllImagesByDatasetId(
             @AuthenticationPrincipal UserDetails authentication,
-            @PathVariable String datasetId
-    ) {
-        AuthUser authorized = userService
-                .findAuthUserByUsername(authentication.getUsername())
-                .orElseThrow();
-        if (!datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId()) &&
-                !authorized.isAdmin()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-        }
+            @PathVariable String datasetId    ) {
+        AuthUser authorized = getAuthorizedUser(authentication);
+
+        checkDatasetAuthorization(authorized, datasetId);
+
         return ResponseEntity.ok(imageService.findAllImagesByDatasetId(datasetId));
     }
 
@@ -122,16 +110,12 @@ public class ImageController {
     @PreAuthorize("hasAnyAuthority('admin:read', 'researcher:read')")
     public ResponseEntity<?> getById(
             @AuthenticationPrincipal UserDetails authentication,
-            @PathVariable String imageId
-    ) {
+            @PathVariable String imageId    ) throws IOException {
+        AuthUser authorized = getAuthorizedUser(authentication);
         Image existed = imageService.findImageById(imageId);
-        AuthUser authorized = userService
-                .findAuthUserByUsername(authentication.getUsername())
-                .orElseThrow();
-        if (!datasetService.userContainsAuthorityToEdit(existed.getDatasetId(), authorized.getId()) &&
-                !authorized.isAdmin()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-        }
+
+        checkDatasetAuthorization(authorized, existed.getDatasetId());
+
         return ResponseEntity.ok(existed);
     }
 
@@ -139,16 +123,12 @@ public class ImageController {
     @PreAuthorize("hasAnyAuthority('admin:delete', 'researcher:delete')")
     public ResponseEntity<?> deleteById(
             @AuthenticationPrincipal UserDetails authentication,
-            @PathVariable String imageId
-    ) {
+            @PathVariable String imageId    ) throws IOException {
+        AuthUser authorized = getAuthorizedUser(authentication);
         Image existed = imageService.findImageById(imageId);
-        AuthUser authorized = userService
-                .findAuthUserByUsername(authentication.getUsername())
-                .orElseThrow();
-        if (!datasetService.userContainsAuthorityToEdit(existed.getDatasetId(), authorized.getId()) &&
-                !authorized.isAdmin()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-        }
+
+        checkDatasetAuthorization(authorized, existed.getDatasetId());
+
         return ResponseEntity.ok(imageService.deleteImage(imageId));
     }
 
@@ -156,18 +136,10 @@ public class ImageController {
     @PreAuthorize("hasAnyAuthority('admin:delete', 'researcher:delete')")
     public ResponseEntity<?> deleteAllByDatasetId(
             @AuthenticationPrincipal UserDetails authentication,
-            @PathVariable String datasetId
-    ) {
-//        Image existed = imageService.findById(imageId);
-        AuthUser authorized = userService
-                .findAuthUserByUsername(authentication.getUsername())
-                .orElseThrow();
+            @PathVariable String datasetId    ) {
+        AuthUser authorized = getAuthorizedUser(authentication);
+        checkDatasetAuthorization(authorized, datasetId);
 
-
-        if (!datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId()) &&
-                !authorized.isAdmin()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-        }
         return ResponseEntity.ok(imageService.deleteAllImagesByDatasetId(datasetId));
     }
 
@@ -183,7 +155,11 @@ public class ImageController {
     public ResponseEntity<?> findAllObjectsByImageId(
             @AuthenticationPrincipal UserDetails authentication,
             @PathVariable String imageId
-    ) {
+    ) throws IOException {
+        AuthUser authorized = getAuthorizedUser(authentication);
+        String datasetId = imageService.findImageById(imageId).getDatasetId();
+        checkDatasetAuthorization(authorized, datasetId);
+
         return ResponseEntity.ok(imageService.findAllImageObjectsByImageId(imageId));
     }
 
@@ -192,13 +168,10 @@ public class ImageController {
     public ResponseEntity<?> saveImageObject(
             @AuthenticationPrincipal UserDetails authentication,
             @RequestBody ImageObject imageObject
-    ) {
-        AuthUser authorized = userService.findAuthUserByUsername(authentication.getUsername()).orElseThrow();
+    ) throws IOException {
+        AuthUser authorized = getAuthorizedUser(authentication);
         String datasetId = imageService.findImageById(imageObject.getImageId()).getDatasetId();
-
-        if (!datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId()) &&
-                !authorized.isAdmin())
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
+        checkDatasetAuthorization(authorized, datasetId);
 
         return ResponseEntity.ok(imageService.saveImageObject(imageObject));
     }
@@ -209,13 +182,11 @@ public class ImageController {
             @AuthenticationPrincipal UserDetails authentication,
             @PathVariable String id,
             @RequestBody ImageObject imageObject
-    ) {
-        AuthUser authorized = userService.findAuthUserByUsername(authentication.getUsername()).orElseThrow();
+    ) throws IOException {
+        AuthUser authorized = getAuthorizedUser(authentication);
         String datasetId = imageService.findImageById(imageObject.getImageId()).getDatasetId();
 
-        if (!datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId()) &&
-                !authorized.isAdmin())
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
+        checkDatasetAuthorization(authorized, datasetId);
 
         imageObject.setId(id);
         return ResponseEntity.ok(imageService.updateImageObject(imageObject));
@@ -226,17 +197,11 @@ public class ImageController {
     public ResponseEntity<?> deleteImageObjectById(
             @AuthenticationPrincipal UserDetails authentication,
             @PathVariable String id
-    ) {
-
-
-        AuthUser authorized = userService.findAuthUserByUsername(authentication.getUsername()).orElseThrow();
+    ) throws IOException {
+        AuthUser authorized = getAuthorizedUser(authentication);
         String imageId = imageService.findImageObjectById(id).getImageId();
         String datasetId = imageService.findImageById(imageId).getDatasetId();
-
-        if (!datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId()) &&
-                !authorized.isAdmin())
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-
+        checkDatasetAuthorization(authorized, datasetId);
         return ResponseEntity.ok(imageService.deleteImageObject(id));
     }
 
@@ -245,15 +210,10 @@ public class ImageController {
     public ResponseEntity<?> deleteImageObjectsByImageId(
             @AuthenticationPrincipal UserDetails authentication,
             @PathVariable String id
-    ) {
-
-        AuthUser authorized = userService.findAuthUserByUsername(authentication.getUsername()).orElseThrow();
+    ) throws IOException {
+        AuthUser authorized = getAuthorizedUser(authentication);
         String datasetId = imageService.findImageById(id).getDatasetId();
-        if (!datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId()) &&
-                !authorized.isAdmin())
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-
-
+        checkDatasetAuthorization(authorized, datasetId);
         return ResponseEntity.ok(imageService.deleteAllObjectByImageId(id));
     }
 
@@ -268,17 +228,12 @@ public class ImageController {
     public ResponseEntity<?> getAllPointsByObjectId(
             @AuthenticationPrincipal UserDetails authentication,
             @PathVariable String id
-    ) {
-        AuthUser authorized = userService.findAuthUserByUsername(authentication.getUsername()).orElseThrow();
-
+    ) throws IOException {
+        AuthUser authorized = getAuthorizedUser(authentication);
         //fetch image by object.getImageId then fetch datasetId by image.getDatasetId
         String imageId = imageService.findImageObjectById(id).getImageId();
         String datasetId = imageService.findImageById(imageId).getDatasetId();
-
-        if (!datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId()) &&
-                !authorized.isAdmin())
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-
+        checkDatasetAuthorization(authorized, datasetId);
         return ResponseEntity.ok(imageService.findAllObjectPointsByImageObjectId(id));
     }
 
@@ -287,16 +242,14 @@ public class ImageController {
     public ResponseEntity<?> saveObjectPoint(
             @AuthenticationPrincipal UserDetails authentication,
             @RequestBody ObjectPoint objectPoint
-    ) {
-        AuthUser authorized = userService.findAuthUserByUsername(authentication.getUsername()).orElseThrow();
+    ) throws IOException {
+        AuthUser authorized = getAuthorizedUser(authentication);
 
         //fetch image by object.getImageId then fetch datasetId by image.getDatasetId
         String imageId = imageService.findImageObjectById(objectPoint.getImageObjectId()).getImageId();
         String datasetId = imageService.findImageById(imageId).getDatasetId();
 
-        if (!datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId()) &&
-                !authorized.isAdmin())
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
+        checkDatasetAuthorization(authorized, datasetId);
 
         return ResponseEntity.ok(imageService.saveObjectPoint(objectPoint));
     }
@@ -307,45 +260,45 @@ public class ImageController {
     public ResponseEntity<?> deletePoint(
             @AuthenticationPrincipal UserDetails authentication,
             @PathVariable String id
-    ) {
-        AuthUser authorized = userService.findAuthUserByUsername(authentication.getUsername()).orElseThrow();
+    ) throws IOException {
+        AuthUser authorized = getAuthorizedUser(authentication);
 
         //fetch image by object.getImageId then fetch datasetId by image.getDatasetId
         ObjectPoint fetched = imageService.findObjectPointById(id);
         String imageId = imageService.findImageObjectById(fetched.getImageObjectId()).getImageId();
         String datasetId = imageService.findImageById(imageId).getDatasetId();
-
-        if (!datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId()) &&
-                !authorized.isAdmin())
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-
+        checkDatasetAuthorization(authorized, datasetId);
         return ResponseEntity.ok(imageService.deleteObjectPoint(id));
     }
 
 
     @DeleteMapping("/objects/points/deleteAllByObjcetId/{id}")
     @PreAuthorize("hasAnyAuthority('admin:create', 'researcher:create')")
-    public ResponseEntity<?> deleteAllPointByObjcetId(
+    public ResponseEntity<?> deleteAllPointByObjectId(
             @AuthenticationPrincipal UserDetails authentication,
             @PathVariable String id
-    ) {
-        AuthUser authorized = userService.findAuthUserByUsername(authentication.getUsername()).orElseThrow();
-
-        //fetch image by object.getImageId then fetch datasetId by image.getDatasetId
-
+    ) throws IOException {
+        AuthUser authorized = getAuthorizedUser(authentication);
         ImageObject object = imageService.findImageObjectById(id);
         String imageId = imageService.findImageById(object.getImageId()).getId();
         String datasetId = imageService.findImageById(imageId).getDatasetId();
-
-        if (!datasetService.userContainsAuthorityToEdit(datasetId, authorized.getId()) &&
-                !authorized.isAdmin())
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(PERMISSION_DENIED_MESSAGE);
-
+        checkDatasetAuthorization(authorized, datasetId);
         return ResponseEntity.ok(imageService.deleteAllObjectPointByObjectId(id));
     }
 
+    private AuthUser getAuthorizedUser(UserDetails authentication) {
+        return userService.findAuthUserByUsername(authentication.getUsername())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_FOUND_MESSAGE));
+    }
+    private void checkDatasetAuthorization(AuthUser authorizedUser, String datasetId) {
+
+        if (datasetService.userContainsAuthorityToEdit(datasetId, authorizedUser.getId()) || authorizedUser.isAdmin())
+            return;
 
 
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, PERMISSION_DENIED_MESSAGE);
+
+    }
 
 
 }

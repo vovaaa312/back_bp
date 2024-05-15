@@ -2,7 +2,7 @@ spring:
   data:
     mongodb:
       database: st64150-db
-      host: localhost
+      host: 172.20.0.10
       port: 27017
   servlet:
     multipart:

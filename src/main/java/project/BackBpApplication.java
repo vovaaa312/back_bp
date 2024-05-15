@@ -21,14 +21,5 @@ public class BackBpApplication {
         SpringApplication.run(BackBpApplication.class, args);
     }
 
-    @Bean
-    public CommandLineRunner commandLineRunner(
-            UserDatasetService datasetService
-    ) {
-        return args -> {
-//            System.out.println(
-//                    datasetService.deleteAllByDatasetId("6621b1451d8d2e4499a2ab07")
-//            );
-        };
-    }
+
 }

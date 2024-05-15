@@ -20,14 +20,14 @@ public class AuthController {
     private final AuthUserRepository userRepository;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request)  {
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request)  {
         if (userRepository.findAuthUserByUsername(request.getUsername()).isPresent()) {
             String errorMessage = "User with username: {" + request.getUsername() + "} already exists";
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new AuthResponse(errorMessage));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
         }
         if(userRepository.findAuthUserByEmail(request.getEmail()).isPresent()){
             String errorMessage = "User with email: {" + request.getEmail() + "} already exists";
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new AuthResponse(errorMessage));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 
         }
         return ResponseEntity.ok(authService.register(request));
@@ -36,19 +36,9 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> authenticate(@RequestBody AuthRequest request) {
         return ResponseEntity.ok(authService.authenticate(request));
-
     }
 
-//    @PreAuthorize("hasAnyAuthority('admin:read')")
-//    @GetMapping("/hello")
-//    public String HelloResponse(){
-//        return "Hello";
-//    }
-//    @PreAuthorize("hasAnyAuthority('admin:read', 'admin:update')")
-//    @GetMapping("/jwt")
-//    public ResponseEntity<?> JwtResponse(@RequestBody String jwt){
-//        JwtService jwtService = new JwtService();
-//        String jwtDecode = jwtService.extractUserName(jwt);
-//        return ResponseEntity.ok(userRepository.findAuthUsersByUsername(jwtDecode));
-//    }
+
+
+
 }

@@ -18,8 +18,8 @@ public class AuthUserService {
     private final PasswordEncoder passwordEncoder;
 
 
-    public Optional<List<AuthUser>> findAll() {
-        return Optional.of(userRepository.findAll());
+    public List<AuthUser> findAll() {
+        return userRepository.findAll();
     }
 
     public Optional<AuthUser> findAuthUserByEmail(String email) {
@@ -55,7 +55,7 @@ public class AuthUserService {
 //    }
 
     public Optional<AuthUser> updateAuthUser(String userId, AuthUser authUser) {
-        AuthUser existingUser = userRepository.findAuthUsersById(userId).get();
+        AuthUser existingUser = userRepository.findAuthUsersById(userId).orElseThrow();
         existingUser.setUsername(authUser.getUsername());
         existingUser.setEmail(authUser.getEmail());
         existingUser.setPassword(passwordEncoder.encode(authUser.getPassword()));
@@ -66,43 +66,38 @@ public class AuthUserService {
 
 
     public Optional<AuthUser> updateUsername(String userId, String newUsername) {
-        if (userRepository.findAuthUsersById(userId).isEmpty()) throw new UserNotFoundException("User not found.");
-        AuthUser existingUser = userRepository.findAuthUsersById(userId).get();
+        AuthUser existingUser = userRepository.findAuthUsersById(userId).orElseThrow(()->new UserNotFoundException("User not found."));
         existingUser.setUsername(newUsername);
         return Optional.of(userRepository.save(existingUser));
 
     }
 
     public Optional<AuthUser> updateEmail(String userId, String newEmail) {
-        if (userRepository.findAuthUsersById(userId).isEmpty()) throw new UserNotFoundException("User not found.");
+        AuthUser existingUser = userRepository.findAuthUsersById(userId).orElseThrow(()->new UserNotFoundException("User not found."));
 
-        AuthUser existingUser = userRepository.findAuthUsersById(userId).get();
         existingUser.setEmail(newEmail);
         return Optional.of(userRepository.save(existingUser));
 
     }
 
     public Optional<AuthUser> updatePassword(String userId, String newPassword) {
-        if (userRepository.findAuthUsersById(userId).isEmpty()) throw new UserNotFoundException("User not found.");
+        AuthUser existingUser = userRepository.findAuthUsersById(userId).orElseThrow(()->new UserNotFoundException("User not found."));
 
-        AuthUser existingUser = userRepository.findAuthUsersById(userId).get();
         existingUser.setPassword(passwordEncoder.encode(newPassword));
         return Optional.of(userRepository.save(existingUser));
     }
 
     public Optional<AuthUser> updateRole(String userId, String role) {
-        if (userRepository.findAuthUsersById(userId).isEmpty()) throw new UserNotFoundException("User not found.");
+        AuthUser existingUser = userRepository.findAuthUsersById(userId).orElseThrow(()->new UserNotFoundException("User not found."));
 
-        AuthUser existingUser = userRepository.findAuthUsersById(userId).get();
         existingUser.setRole(SystemRole.valueOf(role));
         return Optional.of(userRepository.save(existingUser));
     }
 
 
     public Optional<AuthUser> deleteUser(String id) {
-        if (userRepository.findAuthUsersById(id).isEmpty()) throw new UserNotFoundException("User not found.");
 
-        AuthUser deleted = userRepository.findAuthUsersById(id).get();
+        AuthUser deleted = userRepository.findAuthUsersById(id).orElseThrow(()->new UserNotFoundException("User not found."));
         userRepository.deleteById(id);
         return Optional.of(deleted);
     }

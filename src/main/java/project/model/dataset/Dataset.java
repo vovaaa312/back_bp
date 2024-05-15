@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
-import project.model.PhotoCategory;
 
 import java.util.Date;
 
@@ -25,5 +24,5 @@ public class Dataset {
     private String ownerId;
     private Date creationTimestamp;
     private String category;
-
 }
+

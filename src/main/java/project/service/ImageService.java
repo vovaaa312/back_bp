@@ -1,16 +1,27 @@
 package project.service;
 
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import org.apache.commons.io.IOUtils;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+
+import com.mongodb.client.gridfs.model.GridFSFile;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.mongodb.gridfs.GridFsOperations;
+import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+
 import project.model.exception.DatasetNotFoundException;
 import project.model.exception.ImageNotFoundException;
 import project.model.image.Image;
 import project.model.image.ImageObject;
 import project.model.image.ObjectPoint;
-import project.service.repository.DatasetRepository;
-import project.service.repository.ImageRepository;
-import project.service.repository.ObjectPointRepository;
+import project.service.repository.*;
 
+import java.io.IOException;
 import java.util.*;
 
 @Service
@@ -21,6 +32,12 @@ public class ImageService {
     private final ImageObjectService imageObjectService;
     private final ObjectPointRepository objectPointRepository;
     private final DatasetRepository datasetRepository;
+
+    private final GridFsTemplate gridFsTemplate;
+    private final AuthUserRepository userRepository;
+
+    private final GridFsOperations operations;
+
 
     public List<Image> findAllImages() {
         return imageRepository.findAll();
@@ -47,31 +64,26 @@ public class ImageService {
         return imageRepository.findAllByDatasetId(datasetId).orElse(Collections.emptyList());
     }
 
-    public Image findImageById(String id) {
-        return imageRepository.findById(id)
+    public Image findImageById(String id) throws IOException {
+        Image find = imageRepository.findById(id)
                 .orElseThrow(() -> new ImageNotFoundException("Image not found."));
+        GridFSFile gridFSFile = gridFsTemplate.findOne(new Query(Criteria.where("metadata.imageId").is(id)));
+//        assert gridFSFile != null;
+        if(gridFSFile != null)find.setData(IOUtils.toByteArray(operations.getResource(gridFSFile).getInputStream()));
+        return find;
     }
 
-    public Image saveImage(Image image) {
-        //datasetService.findById(image.getDatasetId());
-        return imageRepository.save(image);
+    public Image saveImage(Image image, MultipartFile data) throws IOException {
+       Image save = imageRepository.save(image);
+
+        DBObject metadata = new BasicDBObject();
+        metadata.put("imageId", image.getId());
+
+        gridFsTemplate.store(data.getInputStream(), data.getOriginalFilename(), data.getContentType(), metadata);
+        return save;
     }
 
-    public Image updateImage(Image image) {
-        Image existingImage = imageRepository.findById(image.getId())
-                .orElseThrow(() -> new ImageNotFoundException("Image not found."));
-        //datasetService.findById(image.getDatasetId());
-        existingImage.setName(image.getName());
-        existingImage.setFormat(image.getFormat());
-        existingImage.setData(image.getData());
-        existingImage.setDatasetId(image.getDatasetId());
-        return imageRepository.save(existingImage);
-    }
 
-//    public boolean userContainsAuthorityToEdit(String datasetId, String userId){
-//        return false;
-//        //return datasetService.userContainsAuthorityToEdit(datasetId,userId);
-//    }
 
     public Image deleteImage(String id) {
         Image deleted = imageRepository.findById(id)
@@ -82,6 +94,7 @@ public class ImageService {
             throw new UnsupportedOperationException("Objects list of this image is not empty.");
         }
 
+        gridFsTemplate.delete(new Query(Criteria.where("metadata.imageId").is(id)));
         imageRepository.delete(deleted);
         return deleted;
     }

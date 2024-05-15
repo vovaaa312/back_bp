@@ -6,6 +6,7 @@ import project.model.dataset.UserDataset;
 import project.model.exception.DBObjectNotFoundException;
 import project.model.user.AuthUser;
 import project.model.user.SystemRole;
+import project.service.repository.AuthUserRepository;
 import project.service.repository.UserDatasetRepository;
 
 import java.util.List;
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserDatasetService {
     private final UserDatasetRepository userDatasetRepository;
-    private final AuthUserService userService;
+    private final AuthUserRepository userService;
 
     public List<UserDataset> findAll() {
         return userDatasetRepository.findAll();
@@ -82,7 +83,7 @@ public class UserDatasetService {
         List<UserDataset> userDatasets = userDatasetRepository.findAllByDatasetId(datasetId)
                 .orElseThrow(() -> new DBObjectNotFoundException("User-Dataset links not found."));
         List<String>userIds = usersString(userDatasets);
-        return userService.getUsersByIds(userIds);
+        return userService.findAllById(userIds);
 
     }
 

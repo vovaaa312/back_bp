@@ -16,9 +16,7 @@ import java.util.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document("Users")
-//@Table(name = "Users")
 public class AuthUser implements UserDetails {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private String id;
@@ -26,21 +24,14 @@ public class AuthUser implements UserDetails {
     private String username;
     private String email;
     private String password;
-    private boolean active;
-
     @Enumerated(EnumType.STRING)
     private SystemRole role;
 
-
-//    @ElementCollection
-//    @MapKeyJoinColumn(name = "project_id")
-//    @Column(name = "projects")
-//    private ArrayList<Project> projects;
+    private boolean active;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return role.getAuthorities();
-       // return List.of(new SimpleGrantedAuthority(role.name()));
     }
 
     @Override
@@ -71,4 +62,5 @@ public class AuthUser implements UserDetails {
     public boolean isAdmin(){
         return role.equals(SystemRole.SYSTEM_ADMIN);
     }
+
 }

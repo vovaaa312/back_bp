@@ -19,12 +19,12 @@ public enum SystemRole {
 
     //project level roles
     PROJECT_OWNER(getProjectOwnerPermissions()),
-    PROJECT_DATASET(Collections.emptySet()),
+    PROJECT_DATASET(getProjectDatasetPermissions()),
 
     //dataset level roles
-    DATASET_OWNER(Collections.emptySet()),
-    DATASET_LABEL(Collections.emptySet()),
-    DATASET_VIEWER(Collections.emptySet());
+    DATASET_OWNER(getDatasetOwnerPermissions()),
+    DATASET_LABEL(getDatasetLabelPermissions()),
+    DATASET_VIEWER(getDatasetViewerPermissions());
 
     @Getter
     private final Set<SystemPermission> permissions;

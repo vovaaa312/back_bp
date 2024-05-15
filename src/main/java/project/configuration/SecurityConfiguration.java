@@ -37,15 +37,6 @@ public class SecurityConfiguration  {
             "/api/auth/**",};
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf()
-//                .disable()
-//                .authorizeHttpRequests()
-//                .requestMatchers("")
-//                .permitAll()
-//                .anyRequest()
-//                .authenticated();
-//        return http.build();
 
         http
                 .csrf()
@@ -53,20 +44,6 @@ public class SecurityConfiguration  {
                 .authorizeRequests()
                 .requestMatchers(WHITE_LIST_URL)
                 .permitAll()
-
-//                .requestMatchers(GET,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
-//                .requestMatchers(POST,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
-//                .requestMatchers(PUT,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
-//                .requestMatchers(DELETE,"/api/projects***").hasAnyRole(SYSTEM_ADMIN.name())
-//
-//                .requestMatchers(GET,"/api/datasets***").hasAnyRole(SYSTEM_ADMIN.name())
-
-
-//                .requestMatchers("/api/test/***").hasAnyRole(SYSTEM_ADMIN.name(), SYSTEM_RESEARCHER.name())
-
-                //.requestMatchers("/api/images/**").hasRole(ADMIN_READ.name())
-//                .requestMatchers(PUT,"/api/test/***").hasAnyAuthority(ADMIN_UPDATE.name(), RESEARCHER_UPDATE.name())
-//                .requestMatchers(DELETE,"/api/test/***").hasAnyAuthority(ADMIN_DELETE.name(), RESEARCHER_DELETE.name())
 
                 .and()
                 .sessionManagement()

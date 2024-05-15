@@ -22,15 +22,9 @@ public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private String id;
-
     private String name;
     private String ownerId;
     private Date creationTimestamp;
-
-//    @ElementCollection
-//    @MapKeyJoinColumn(name = "user_id")
-//    @Column(name = "role")
-//    private Map<AuthUser, SystemRole> userRoles = new HashMap<>();
-
-
 }
+
+

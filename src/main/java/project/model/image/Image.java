@@ -16,7 +16,6 @@ import java.util.*;
 @Document("Images")
 @Entity
 public class Image {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private String id;

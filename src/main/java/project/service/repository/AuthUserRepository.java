@@ -1,5 +1,6 @@
 package project.service.repository;
 
+import org.bouncycastle.LICENSE;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import project.model.user.AuthUser;
@@ -17,6 +18,7 @@ public interface AuthUserRepository extends MongoRepository<AuthUser, String> {
     Optional<List<AuthUser>> findAllById(String id);
 
     Optional<AuthUser> findAuthUsersById(String id);
+
 
 
 

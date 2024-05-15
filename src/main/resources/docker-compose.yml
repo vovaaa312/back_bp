@@ -1,8 +1,34 @@
 version: "5"
+#services:
+#  back_bp:
+#    image: mongo:latest
+#    container_name: "bp_db"
+#    ports:
+#      - 27017:27017
+##    networks:
+##      back_network:
+##        ipv4_address: 172.20.0.10
+#
+#  back_bp-api:
+#    image: back_bp-api:1.0
+#    container_name: "back_bp-api"
+#    ports:
+#      - 8080:8080
+
+#networks:
+#    back_network:
+#      ipam:
+#        driver: default
+#        config:
+#          - subnet: 172.20.0.0/16
+
+
 services:
   back_bp:
     image: mongo:latest
     container_name: "bp_db"
+    hostname: localhost
+
     ports:
       - 27017:27017
     networks:
@@ -12,12 +38,12 @@ services:
   back_bp-api:
     image: back_bp-api:1.0
     container_name: "back_bp-api"
+    hostname: localhost
     ports:
       - 8080:8080
+    depends_on:
+      - back_bp
 
 networks:
-    back_network:
-      ipam:
-        driver: default
-        config:
-          - subnet: 172.20.0.0/16
+  back_network:
+    driver: bridge

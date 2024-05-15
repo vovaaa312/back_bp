@@ -22,5 +22,4 @@ public class ImageObject {
     private String id;
     private String name;
     private String imageId;
-
 }
